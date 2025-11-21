@@ -4,7 +4,7 @@ pulsar:
 
 api:
   dryRun: true
-  port: 8080
+  port: 8969
 
 schemas:
   SIGNALITIEK_ERROR: "schemas/signalitiek_error.json"

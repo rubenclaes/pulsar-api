@@ -1,0 +1,46 @@
+# Binaries
+pulsar-api
+pulsar-api.exe
+*.exe
+*.out
+*.dll
+*.so
+*.dylib
+
+# Build output folders
+/build/
+/dist/
+/bin/
+/out/
+
+# Go build cache
+*.test
+go-build/
+*.log
+
+# Dependency directories
+vendor/
+
+# IDE / Editor stuff
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Config files (DO NOT COMMIT SECRETS)
+config/*.local.yaml
+config/*.secret.yaml
+config/*.dev.yaml
+
+# Node / Frontend junk (just in case)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Logs
+*.log
+logs/

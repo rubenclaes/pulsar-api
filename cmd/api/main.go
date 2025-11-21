@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
@@ -16,14 +14,6 @@ import (
 	"github.com/rubenclaes/pulsar-api/internal/pulsar"
 )
 
-func executableDir() string {
-	ex, err := os.Executable()
-	if err != nil {
-		return "."
-	}
-	return filepath.Dir(ex)
-}
-
 func main() {
 	logging.Init()
 	defer logging.Sync()
@@ -33,10 +23,16 @@ func main() {
 	v.SetConfigName("config")
 	v.SetConfigType("yaml")
 
-	exeDir := executableDir()
-	v.AddConfigPath(exeDir)
-	v.AddConfigPath(filepath.Join(exeDir, "config"))
+	// 1. Local dev path
+	v.AddConfigPath("./config") // go run
+	v.AddConfigPath(".")        // fallback
 
+	// 2. Standard OS config locations (cross-platform best practice)
+	v.AddConfigPath("/etc/pulsar-api/")
+	v.AddConfigPath("$HOME/.config/pulsar-api/")
+	v.AddConfigPath("$XDG_CONFIG_HOME/pulsar-api/")
+
+	// Load config
 	if err := v.ReadInConfig(); err != nil {
 		log.Fatal("Failed to load config.yaml", zap.Error(err))
 	}
