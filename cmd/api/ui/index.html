@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Acerta Event Tester</title>
+
+    <!-- Tailwind (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Tailwind config + Acerta kleuren -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              acertaBlue: "#003366",
+              acertaCyan: "#00a9c7",
+            },
+          },
+        },
+      };
+    </script>
+
+    <!-- ShadCN CDN styles -->
+    <link rel="stylesheet" href="https://unpkg.com/@shadcn/ui/styles.css" />
+  </head>
+
+  <body class="bg-gray-100 text-acertaBlue">
+    <!-- HEADER -->
+    <header class="bg-acertaBlue text-white px-6 py-4 shadow">
+      <h1 class="text-xl font-semibold">Acerta Pulsar Event Tester</h1>
+    </header>
+
+    <!-- MAIN -->
+    <main class="max-w-4xl mx-auto p-6">
+      <!-- CARD -->
+      <div class="bg-white shadow-md rounded-lg p-6 space-y-6">
+        <!-- Endpoint -->
+        <div class="space-y-2">
+          <label class="font-medium">Endpoint</label>
+          <div class="flex gap-2">
+            <input
+              id="endpoint"
+              class="border rounded px-3 py-2 flex-1"
+              value="/api/v1/events"
+            />
+            <button
+              onclick="setSingle()"
+              class="bg-acertaBlue text-white px-3 py-2 rounded"
+            >
+              Single
+            </button>
+            <button
+              onclick="setBatch()"
+              class="bg-acertaCyan text-white px-3 py-2 rounded"
+            >
+              Batch
+            </button>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="space-y-2">
+          <label class="font-medium">Body (JSON)</label>
+          <textarea
+            id="body"
+            class="border rounded w-full h-64 font-mono p-3"
+          ></textarea>
+        </div>
+
+        <!-- Send -->
+        <div class="flex justify-end">
+          <button
+            onclick="send()"
+            class="bg-acertaCyan text-white px-5 py-2 rounded text-lg"
+          >
+            Versturen
+          </button>
+        </div>
+
+        <!-- Response -->
+        <div>
+          <h2 class="font-semibold text-lg mb-2">Response</h2>
+          <pre
+            id="response"
+            class="bg-black text-green-400 p-4 rounded overflow-auto h-64"
+          ></pre>
+        </div>
+      </div>
+    </main>
+
+    <!-- JS -->
+    <script>
+      function setSingle() {
+        document.getElementById("endpoint").value = "/api/v1/events";
+        document.getElementById("body").value = JSON.stringify(
+          {
+            eventType: "SIGNALITIEK_ERROR",
+            sourceSystem: "EverESSt",
+            payload: {
+              errorCode: "999999",
+              message: "Test event",
+              employerId: "123456",
+            },
+          },
+          null,
+          2
+        );
+      }
+
+      function setBatch() {
+        document.getElementById("endpoint").value = "/api/v1/events/batch";
+        document.getElementById("body").value = JSON.stringify(
+          [
+            {
+              eventType: "SIGNALITIEK_ERROR",
+              sourceSystem: "EverESSt",
+              payload: {
+                errorCode: "999999",
+                message: "Test batch 1",
+                employerId: "123456",
+              },
+            },
+            {
+              eventType: "WAGE_ERROR",
+              sourceSystem: "EverESSt",
+              payload: {
+                dossierId: "ABC-123",
+              },
+            },
+          ],
+          null,
+          2
+        );
+      }
+
+      async function send() {
+        const ep = document.getElementById("endpoint").value;
+        const body = document.getElementById("body").value;
+        const resp = document.getElementById("response");
+
+        resp.textContent = "⏳ Versturen...";
+
+        try {
+          const res = await fetch(ep, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body,
+          });
+
+          const text = await res.text();
+
+          try {
+            resp.textContent = JSON.stringify(JSON.parse(text), null, 2);
+          } catch {
+            resp.textContent = text;
+          }
+        } catch (e) {
+          resp.textContent = "❌ Error: " + e;
+        }
+      }
+
+      setSingle();
+    </script>
+  </body>
+</html>

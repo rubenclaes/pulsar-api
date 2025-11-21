@@ -1,0 +1,11 @@
+pulsar:
+  url: "pulsar://localhost:6650"
+  defaultTopic: "persistent://tenant/ns/default-topic"
+
+api:
+  dryRun: true
+  port: 8080
+
+schemas:
+  SIGNALITIEK_ERROR: "schemas/signalitiek_error.json"
+  WAGE_ERROR: "schemas/wage_error.json"

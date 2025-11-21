@@ -1,0 +1,38 @@
+openapi: 3.0.3
+info:
+  title: Pulsar Event API
+  version: 1.0.0
+
+paths:
+  /api/v1/events:
+    post:
+      summary: Send an event to Pulsar
+      operationId: postEvent
+      parameters:
+        - in: header
+          name: X-Correlation-ID
+          schema:
+            type: string
+          required: false
+          description: Optional correlation ID, generated if not provided.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [eventType, sourceSystem, payload]
+              properties:
+                eventType:
+                  type: string
+                sourceSystem:
+                  type: string
+                payload:
+                  type: object
+      responses:
+        "201":
+          description: Event sent successfully
+        "400":
+          description: Invalid request
+        "500":
+          description: Internal error
