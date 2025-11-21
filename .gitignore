@@ -3,44 +3,21 @@ pulsar-api
 pulsar-api.exe
 *.exe
 *.out
-*.dll
-*.so
-*.dylib
 
-# Build output folders
-/build/
-/dist/
-/bin/
-/out/
+# Build dirs
+build/
+bin/
+dist/
 
-# Go build cache
-*.test
-go-build/
-*.log
-
-# Dependency directories
-vendor/
-
-# IDE / Editor stuff
+# IDE
 .vscode/
 .idea/
-*.swp
-*.swo
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db
 
-# Config files (DO NOT COMMIT SECRETS)
+# Config overrides
 config/*.local.yaml
-config/*.secret.yaml
 config/*.dev.yaml
-
-# Node / Frontend junk (just in case)
-node_modules/
-package-lock.json
-yarn.lock
-
-# Logs
-*.log
-logs/
+config/*.secret.yaml
