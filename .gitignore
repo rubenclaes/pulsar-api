@@ -1,0 +1,23 @@
+# Binaries
+pulsar-api
+pulsar-api.exe
+*.exe
+*.out
+
+# Build dirs
+build/
+bin/
+dist/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Config overrides
+config/*.local.yaml
+config/*.dev.yaml
+config/*.secret.yaml

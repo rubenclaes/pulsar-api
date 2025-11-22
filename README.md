@@ -15,6 +15,11 @@ pulsar-api/
     *.json
 ```
 
+## Runnen 
+```golang
+go run ./cmd/api
+```
+
 ## Applicatie starten
 
 Windows (PowerShell):
