@@ -1,6 +1,11 @@
 pulsar:
   url: "pulsar://localhost:6650"
   defaultTopic: "persistent://tenant/ns/default-topic"
+  auth:
+    enabled: true
+    clientId: "your-client-id"
+    clientSecret: "your-client-secret"
+    tokenUrl: "https://idp.example.com/oauth2/token"
 
 api:
   dryRun: true
