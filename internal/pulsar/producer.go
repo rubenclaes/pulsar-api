@@ -2,49 +2,81 @@ package pulsar
 
 import (
 	"context"
-	"log"
+	"fmt"
 
-	pulsargo "github.com/apache/pulsar-client-go/pulsar"
+	"github.com/apache/pulsar-client-go/pulsar"
+	"go.uber.org/zap"
+
+	customauth "github.com/rubenclaes/pulsar-api/internal/auth"
 )
 
 type Producer struct {
-	client   pulsargo.Client
-	producer pulsargo.Producer
+	client       pulsar.Client
+	defaultTopic string
+	log          *zap.Logger
+	tokenProv    *customauth.TokenProvider
 }
 
-func NewProducer(brokerURL, topic string) *Producer {
-	client, err := pulsargo.NewClient(pulsargo.ClientOptions{
-		URL: brokerURL,
-	})
-	if err != nil {
-		log.Fatalf("failed to create pulsar client: %v", err)
+type Config struct {
+	URL          string
+	DefaultTopic string
+	Auth         customauth.OAuthConfig
+}
+
+func NewProducer(log *zap.Logger, cfg Config, tokenProv *customauth.TokenProvider) (*Producer, error) {
+	var auth pulsar.Authentication
+
+	if cfg.Auth.Enabled {
+		if tokenProv == nil {
+			return nil, fmt.Errorf("auth enabled but token provider is nil")
+		}
+		// Initieel token ophalen
+		token, err := tokenProv.GetToken(context.Background())
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch initial token: %w", err)
+		}
+		auth = pulsar.NewAuthenticationToken(token)
 	}
 
-	producer, err := client.CreateProducer(pulsargo.ProducerOptions{
-		Topic: topic,
+	client, err := pulsar.NewClient(pulsar.ClientOptions{
+		URL:            cfg.URL,
+		Authentication: auth,
 	})
 	if err != nil {
-		log.Fatalf("failed to create pulsar producer: %v", err)
+		return nil, err
 	}
 
 	return &Producer{
-		client:   client,
-		producer: producer,
-	}
-}
-
-// returns Pulsar message ID as string
-func (p *Producer) Send(msg []byte) (string, error) {
-	msgID, err := p.producer.Send(context.Background(), &pulsargo.ProducerMessage{
-		Payload: msg,
-	})
-	if err != nil {
-		return "", err
-	}
-	return msgID.String(), nil
+		client:       client,
+		defaultTopic: cfg.DefaultTopic,
+		log:          log,
+		tokenProv:    tokenProv,
+	}, nil
 }
 
 func (p *Producer) Close() {
-	p.producer.Close()
 	p.client.Close()
+}
+
+// Send stuurt een message naar topic (of defaultTopic als leeg).
+func (p *Producer) Send(ctx context.Context, topic string, payload []byte) error {
+	if topic == "" {
+		topic = p.defaultTopic
+	}
+
+	prod, err := p.client.CreateProducer(pulsar.ProducerOptions{
+		Topic: topic,
+	})
+	if err != nil {
+		return err
+	}
+	defer prod.Close()
+
+	_, err = prod.Send(ctx, &pulsar.ProducerMessage{
+		Payload: payload,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }
