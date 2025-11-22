@@ -12,12 +12,6 @@ import (
 	"github.com/rubenclaes/pulsar-api/internal/pulsar"
 )
 
-type EventRequest struct {
-	EventType    string                 `json:"eventType" binding:"required"`
-	SourceSystem string                 `json:"sourceSystem" binding:"required"`
-	Payload      map[string]interface{} `json:"payload" binding:"required"`
-}
-
 type EventResponse struct {
 	Status        string        `json:"status"`
 	Topic         string        `json:"topic"`
@@ -107,10 +101,9 @@ func (h *EventHandler) PostEvent(c *gin.Context) {
 
 	var req EventRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Warn("invalid request body", zap.Error(err), zap.String("correlationId", corrID))
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":        "error",
-			"error":         "invalid request body",
+			"error":         "invalid request",
 			"details":       err.Error(),
 			"correlationId": corrID,
 		})
@@ -118,11 +111,6 @@ func (h *EventHandler) PostEvent(c *gin.Context) {
 	}
 
 	if err := validateEventSchema(req); err != nil {
-		log.Warn("schema validation failed",
-			zap.Error(err),
-			zap.String("eventType", req.EventType),
-			zap.String("correlationId", corrID),
-		)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":        "error",
 			"error":         "schema validation failed",
@@ -132,28 +120,12 @@ func (h *EventHandler) PostEvent(c *gin.Context) {
 		return
 	}
 
-	payloadBytes, err := json.Marshal(req)
-	if err != nil {
-		log.Error("failed to marshal payload", zap.Error(err), zap.String("correlationId", corrID))
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":        "error",
-			"error":         "internal serialization error",
-			"correlationId": corrID,
-		})
-		return
-	}
+	payloadBytes, _ := json.Marshal(req)
 
-	topic := h.resolveTopic(req)
-
-	log.Info("Received event",
-		zap.String("eventType", req.EventType),
-		zap.String("sourceSystem", req.SourceSystem),
-		zap.String("topic", topic),
-		zap.Int("bytes", len(payloadBytes)),
-		zap.String("correlationId", corrID),
-	)
+	topic := h.resolveTopic(c, req)
 
 	resp := EventResponse{
+		Status:        "dry-run",
 		Topic:         topic,
 		Bytes:         len(payloadBytes),
 		DryRun:        h.DryRun,
@@ -162,21 +134,15 @@ func (h *EventHandler) PostEvent(c *gin.Context) {
 	}
 
 	if h.DryRun {
-		log.Info("DRY-RUN → not sending to Pulsar", zap.String("correlationId", corrID))
-		resp.Status = "dry-run"
 		c.JSON(http.StatusOK, resp)
 		return
 	}
 
-	msgID, err := h.Producer.Send(payloadBytes)
+	msgID, err := h.Producer.Send(c.Request.Context(), topic, payloadBytes)
 	if err != nil {
-		log.Error("failed sending to Pulsar",
-			zap.Error(err),
-			zap.String("correlationId", corrID),
-		)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":        "error",
-			"error":         "failed sending to Pulsar",
+			"error":         "failed sending to pulsar",
 			"details":       err.Error(),
 			"correlationId": corrID,
 		})
@@ -185,13 +151,6 @@ func (h *EventHandler) PostEvent(c *gin.Context) {
 
 	resp.Status = "sent"
 	resp.MessageID = msgID
-
-	log.Info("Event sent to Pulsar",
-		zap.String("messageId", msgID),
-		zap.String("topic", topic),
-		zap.String("correlationId", corrID),
-	)
-
 	c.JSON(http.StatusCreated, resp)
 }
 
